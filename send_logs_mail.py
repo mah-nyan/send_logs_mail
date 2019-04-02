@@ -1,9 +1,13 @@
+# -*- coding: utf-8 -*-
+#WOWHoneypotの前日のlogを整形してメール送付するpython3スクリプトです。
+#2019-04-02 mah-nyan
 import smtplib
 from email.mime.text import MIMEText
 from email.utils import formatdate
 import datetime
 import re
 import os
+import base64
 
 LOGIN_ADDRESS = 'your.smtp.server@login.address'
 ENVELOPE_ADDRESS = 'wowhoneypot@your.domain'
@@ -50,10 +54,12 @@ def create_body():
         for line in lines:
             ###################################################################↓除外したいIPアドレス。例えば確認時にアクセスする自分のGIP等
             if line.find(yestarday.strftime("%Y-%m-%d")) >= 0 and line.find("1.2.3.4") < 0:
-                rawdata += line[:-1]
-                rawdata += "\n\n"
                 logcount += 1
-
+                rawdata += "-=-=" + str(logcount) + "件目のlog=-=-\n\n"
+                rawdata += line[:-1]
+                bunkatsu = line.rsplit(" ", 1)
+                decdata = (base64.decodestring(bunkatsu[-1].encode("ascii")).decode("utf8"))
+                rawdata += ("\n\n" + str(decdata) + "\n\n")
         
         all_iplist =[]
         #unique_iplist =[]
