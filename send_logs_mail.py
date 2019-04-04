@@ -71,7 +71,7 @@ def create_body():
         for line in lines:
             ###################################################################↓除外したいIPアドレス。例えば確認時にアクセスする自分のGIP等
             if line.find(yestarday.strftime("%Y-%m-%d")) >= 0 and line.find("1.2.3.4") < 0 :
-                all_ips = re.search("(([1-9]?[0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([1-9]?[0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])", line)
+                all_ips = re.search("(([1-9]?[0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}(([1-9]?[0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\s)", line)
                 all_iplist.append(all_ips.group())
                 unique_iplist = list(dict.fromkeys(all_iplist))
 
