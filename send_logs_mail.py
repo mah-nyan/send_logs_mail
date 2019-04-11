@@ -4,7 +4,7 @@
 #圧縮時にsubprocessで7zipを呼び出すため、事前にインストールが必要です。
 #sudo apt install p7zip-full
 #sudo pip3 install pandas
-#2019-04-04 mah-nyan
+#2019-04-11 mah-nyan
 import smtplib
 from email.mime.text import MIMEText
 from email.utils import formatdate
@@ -104,7 +104,7 @@ def create_csv(body):
         log_file = open("./" + arg1)
         lines = log_file.readlines()
         log_file.close
-        csvdata = [["date", "time", "srcip", "method", "path"]]
+        csvdata = [["date", "time", "src_ip", "method", "path"]]
         for line in lines:
             date = re.search ("\d{4}-\d{2}-\d{2}", line)
             time = re.search ("\d{2}:\d{2}:\d{2}", line)
@@ -112,14 +112,22 @@ def create_csv(body):
             method = re.search ("(?<=\s\")\w+", line)
             uri = re.search ("\s/\s|\s(/[\w/:%#\$&\?\(\)~\.=\+\-]+)(?=\sHTTP/\d\.\d\")", line)
             uri2 = re.search ("\s(\w+[\w/:%#\$&\?\(\)~\.=\+\-]+)(?=\sHTTP/\d\.\d\")", line)
+            uri3 = re.search ("\s\s(?=HTTP/\d\.\d\")", line)
+
             if uri is not None:
                 rawuri = str(uri.group()).lstrip( )
                 rawsrcip = str(srcip.group())
                 csvdata += [[date.group(), time.group(), rawsrcip.replace("] ", ""), method.group(), rawuri]]
+
             if uri2 is not None:
                 rawuri2 = str(uri2.group()).lstrip( )
                 rawsrcip = str(srcip.group())
                 csvdata += [[date.group(), time.group(), rawsrcip.replace("] ", ""), method.group(), rawuri2]]
+
+            if uri3 is not None:
+                rawuri3 = str(uri3.group()).lstrip( )
+                rawsrcip = str(srcip.group())
+                csvdata += [[date.group(), time.group(), rawsrcip.replace("] ", ""), method.group(), rawuri3]]
         
         if not os.path.exists("./log/"):
             os.mkdir("./log/")            
