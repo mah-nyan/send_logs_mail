@@ -110,8 +110,8 @@ def create_csv(body):
             time = re.search ("\d{2}:\d{2}:\d{2}", line)
             srcip = re.search ("]\s\d{1,3}.\d{1,3}.\d{1,3}.\d{1,3}", line)
             method = re.search ("(?<=\s\")\w+", line)
-            uri = re.search ("\s/\s|\s(/[\w/:%#\$&\?\(\)~\.=\+\-]+)(?=\sHTTP/\d\.\d\")", line)
-            uri2 = re.search ("\s(\w+[\w/:%#\$&\?\(\)~\.=\+\-]+)(?=\sHTTP/\d\.\d\")", line)
+            uri = re.search ("\s/\s|\s(/[\w/:%#\$&\?\(\)~\.\\\&\[\]=\+\-]+)(?=\sHTTP/\d\.\d\")", line)
+            uri2 = re.search ("\s(\w+[\w/:%#\$&\?\(\)~\.\\\&\[\]=\+\-]+)(?=\sHTTP/\d\.\d\")", line)
             uri3 = re.search ("\s\s(?=HTTP/\d\.\d\")", line)
 
             if uri is not None:
