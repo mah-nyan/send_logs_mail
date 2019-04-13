@@ -4,7 +4,7 @@
 #圧縮時にsubprocessで7zipを呼び出すため、事前にインストールが必要です。
 #sudo apt install p7zip-full
 #sudo pip3 install pandas
-#2019-04-11 mah-nyan
+#2019-04-13 mah-nyan
 import smtplib
 from email.mime.text import MIMEText
 from email.utils import formatdate
@@ -26,6 +26,8 @@ MY_PASSWORD = 'foobar'
 TO_ADDRESS = 'your@gmail.com'
 SUBJECT = 'WOWHoneypot1号のDailylog'
 yestarday = datetime.date.today() - datetime.timedelta(1)
+#↓除外したいIPアドレス。例えば確認時にアクセスする自分のGIP等
+ExclusionIP = '164.70.222.31'
 
 def create_file():
     try:
@@ -37,8 +39,7 @@ def create_file():
         logcount = 0
         rawdata = "■アクセスlogのrawdataは以下となってます。\n\n"
         for line in lines:
-            ###################################################################↓除外したいIPアドレス。例えば確認時にアクセスする自分のGIP等
-            if line.find(yestarday.strftime("%Y-%m-%d")) >= 0 and line.find("1.2.3.4") < 0:
+            if line.find(yestarday.strftime("%Y-%m-%d")) >= 0 and line.find(ExclusionIP) < 0:
                 logcount += 1
                 rawdata += "-=-=" + str(logcount) + "件目のlog=-=-\n\n"
                 rawdata += line[:-1]
@@ -48,16 +49,14 @@ def create_file():
 
         ac_log = str()
         for line in lines:
-            ###################################################################↓除外したいIPアドレス。例えば確認時にアクセスする自分のGIP等
-            if line.find(yestarday.strftime("%Y-%m-%d")) >= 0 and line.find("1.2.3.4") < 0:
+            if line.find(yestarday.strftime("%Y-%m-%d")) >= 0 and line.find(ExclusionIP) < 0:
                 bunkatsu2 = line.rsplit(" ", 1)
                 decdata2 = (base64.decodestring(bunkatsu2[-1].encode("ascii")).decode("utf8"))
                 ac_log += line.rsplit(" ", 1)[0] + decdata2  
 
         all_iplist =[]
         for line in lines:
-            ###################################################################↓除外したいIPアドレス。例えば確認時にアクセスする自分のGIP等
-            if line.find(yestarday.strftime("%Y-%m-%d")) >= 0 and line.find("1.2.3.4") < 0 :
+            if line.find(yestarday.strftime("%Y-%m-%d")) >= 0 and line.find(ExclusionIP) < 0 :
                 all_ips = re.search("(([1-9]?[0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}(([1-9]?[0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\s)", line)
                 all_iplist.append(all_ips.group())
                 unique_iplist = list(dict.fromkeys(all_iplist))
@@ -69,8 +68,7 @@ def create_file():
 
             huntingdata = "■huntinglogのrawdataは以下となってます。\n\n"
             for line in lines2:
-                ###################################################################↓除外したいIPアドレス。例えば確認時にアクセスする自分のGIP等
-                if line.find(yestarday.strftime("%Y-%m-%d")) >= 0 and line.find("1.2.3.4") < 0:
+                if line.find(yestarday.strftime("%Y-%m-%d")) >= 0 and line.find(ExclusionIP) < 0:
                     huntingdata += line[:-1]
                     huntingdata += "\n\n"
         else:
@@ -100,57 +98,62 @@ def create_file():
 
 def create_csv(body): 
     try:
-        arg1 = "log/access_" + yestarday.strftime("%Y-%m-%d") + ".log"
-        log_file = open("./" + arg1)
-        lines = log_file.readlines()
-        log_file.close
         csvdata = [["date", "time", "src_ip", "method", "path"]]
+
+        accesslog = open('/opt/wow/WOWHoneypot/log/access_log')
+        lines = accesslog.readlines()
+        accesslog.close
+
         for line in lines:
-            date = re.search ("\d{4}-\d{2}-\d{2}", line)
-            time = re.search ("\d{2}:\d{2}:\d{2}", line)
-            srcip = re.search ("]\s\d{1,3}.\d{1,3}.\d{1,3}.\d{1,3}", line)
-            method = re.search ("(?<=\s\")\w+", line)
-            uri = re.search ("\s/\s|\s(/[\w/:%#\$&\?\(\)~\.\\\&\[\]=\+\-]+)(?=\sHTTP/\d\.\d\")", line)
-            uri2 = re.search ("\s(\w+[\w/:%#\$&\?\(\)~\.\\\&\[\]=\+\-]+)(?=\sHTTP/\d\.\d\")", line)
-            uri3 = re.search ("\s\s(?=HTTP/\d\.\d\")", line)
+            if line.find(yestarday.strftime("%Y-%m-%d")) >= 0 and line.find(ExclusionIP) < 0 :
+                date = re.search ("\d{4}-\d{2}-\d{2}", line)
+                time = re.search ("\d{2}:\d{2}:\d{2}", line)
+                srcip = re.search ("]\s\d{1,3}.\d{1,3}.\d{1,3}.\d{1,3}", line)
+                method = re.search ("(?<=\s\")\w+", line)
+                uri = re.search ("\s/\s|\s(/[\w\$\&\?\(\)\.\+\-\\\|\[\]\^=~/%#:;',<>@{}]+)(?=\sHTTP/\d\.\d\")", line)
+                uri2 = re.search ("\s(\w+[\w\$\&\?\(\)\.\+\-\\\|\[\]\^=~/%#:;',<>@{}]+)(?=\sHTTP/\d\.\d\")", line)
+                uri3 = re.search ("\s\s(?=HTTP/\d\.\d\")", line)
 
-            if uri is not None:
-                rawuri = str(uri.group()).lstrip( )
-                rawsrcip = str(srcip.group())
-                csvdata += [[date.group(), time.group(), rawsrcip.replace("] ", ""), method.group(), rawuri]]
+                if uri is not None:
+                    rawuri = str(uri.group()).lstrip( )
+                    rawsrcip = str(srcip.group())
+                    csvdata += [[date.group(), time.group(), rawsrcip.replace("] ", ""), method.group(), rawuri]]
 
-            if uri2 is not None:
-                rawuri2 = str(uri2.group()).lstrip( )
-                rawsrcip = str(srcip.group())
-                csvdata += [[date.group(), time.group(), rawsrcip.replace("] ", ""), method.group(), rawuri2]]
+                if uri2 is not None:
+                    rawuri2 = str(uri2.group()).lstrip( )
+                    rawsrcip = str(srcip.group())
+                    csvdata += [[date.group(), time.group(), rawsrcip.replace("] ", ""), method.group(), rawuri2]]
 
-            if uri3 is not None:
-                rawuri3 = str(uri3.group()).lstrip( )
-                rawsrcip = str(srcip.group())
-                csvdata += [[date.group(), time.group(), rawsrcip.replace("] ", ""), method.group(), rawuri3]]
+                if uri3 is not None:
+                    rawuri3 = str(uri3.group()).lstrip( )
+                    rawsrcip = str(srcip.group())
+                    csvdata += [[date.group(), time.group(), rawsrcip.replace("] ", ""), method.group(), rawuri3]]
         
         if not os.path.exists("./log/"):
             os.mkdir("./log/")            
         
-        with open('./' + arg1 + ".csv", "w") as file:
+        with open("./log/" + yestarday.strftime("%Y-%m-%d") + ".csv", "w") as file:
             writer = csv.writer(file, lineterminator='\n')
             writer.writerows(csvdata)
 
         return body
 
     except Exception as e:
-        csvdata += [["error", "error", "error", "error", str(e)]]
+        csvdata += [["e", "rr", "o", "r", str(e)]]
+        with open("./log/" + yestarday.strftime("%Y-%m-%d") + ".csv", "w") as file:
+            writer = csv.writer(file, lineterminator='\n')
+            writer.writerows(csvdata)
         print (str(e))
-        body += "※csv作成時にエラーが発生しています。\n\n"
+        body += "※csv作成時にエラーが発生しています。\n\n" + str(e)
         return body
 
 
 def log_analyze(body):
     try:
         log_analyzed = str()
-        arg1 = "log/access_" + yestarday.strftime("%Y-%m-%d") + ".log"
+        arg1 = "log/" + yestarday.strftime("%Y-%m-%d")
         df = pd.read_csv('./' + arg1 + ".csv",sep=",")
-        df.columns = ["date", "time", "srcip", "method", "path"]
+        df.columns = ["date", "time", "src_ip", "method", "path"]
                
         df_by_method = df.groupby("method")["path"].count().sort_values(ascending=False)
         log_analyzed += "■メソッドの一覧と件数は以下です。\n\n"
@@ -165,7 +168,7 @@ def log_analyze(body):
         return body
 
     except Exception as e:
-        body += "※log分析時にエラーが発生しています。\n\n"
+        body += "※log分析時にエラーが発生しています。\n\n" + str(e)
         return body
 
 
@@ -173,7 +176,7 @@ def compress_files(body):
     try:
         cmd = "7z a -phoneypot " + "./log/honeypot_" + yestarday.strftime("%Y-%m-%d") + ".7z " + "./log/access_" \
             + yestarday.strftime("%Y-%m-%d") + ".log " + "./log/honeypot_" + yestarday.strftime("%Y-%m-%d") + ".log " \
-                + "./log/access_" + yestarday.strftime("%Y-%m-%d") + ".log.csv"
+                + "./log/" + yestarday.strftime("%Y-%m-%d") + ".csv"
 
         subprocess.run(cmd.split())
 
@@ -209,7 +212,7 @@ def create_message(from_addr, to_addr, subject, body, mine):
 
 
 def send(from_addr, to_addrs, msg):
-    smtpobj = smtplib.SMTP('your.smtp.server', 587)
+    smtpobj = smtplib.SMTP('your.smtp.serv', 587)
     smtpobj.ehlo()
     smtpobj.starttls()
     smtpobj.ehlo()
