@@ -27,7 +27,7 @@ TO_ADDRESS = 'your@gmail.com'
 SUBJECT = 'WOWHoneypot1号のDailylog'
 yestarday = datetime.date.today() - datetime.timedelta(1)
 #↓除外したいIPアドレス。例えば確認時にアクセスする自分のGIP等
-ExclusionIP = '164.70.222.31'
+ExclusionIP = '1.2.3.4'
 
 def create_file():
     try:
